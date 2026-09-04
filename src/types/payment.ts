@@ -67,6 +67,8 @@ export const VerifyRequestSchema = z.object({
   paymentRequirements: PaymentRequirementsSchema,
 });
 
+export const SettleRequestSchema = VerifyRequestSchema;
+
 // 위 zod 스키마들로부터 TypeScript 타입을 자동 생성 (스키마와 타입이 따로 놀 일이 없게)
 export type PaymentRequirements = z.infer<typeof PaymentRequirementsSchema>;
 export type Authorization = z.infer<typeof AuthorizationSchema>;
@@ -77,3 +79,15 @@ export type PaymentPayload = z.infer<typeof PaymentPayloadSchema>;
 export type VerifyResult =
   | { isValid: true; payer: string }
   | { isValid: false; invalidReason: string; payer?: string };
+
+// x402 v2 스펙(Section 5.3.2, SettleResponse)의 settle 응답 형식.
+// transaction/network는 실패 케이스에서도 필수 - 실패 시 transaction은 빈 문자열("")로 채워서 응답한다.
+export type SettleResult =
+  | { success: true; transaction: string; network: string; payer: string }
+  | {
+      success: false;
+      errorReason: string;
+      transaction: string;
+      network: string;
+      payer?: string;
+    };

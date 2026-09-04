@@ -22,6 +22,10 @@ const EnvSchema = z.object({
   KRWH_DECIMALS: z.coerce.number(),
   KRWH_EIP712_NAME: z.string(),
   KRWH_EIP712_VERSION: z.string(),
+
+  FACILITATOR_PRIVATE_KEY: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, "유효한 프라이빗키가 아닙니다"),
 });
 
 // 위 스키마로부터 타입을 추론 (스키마와 타입이 어긋날 일이 없음)
