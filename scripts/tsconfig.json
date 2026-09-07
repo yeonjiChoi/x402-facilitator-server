@@ -1,0 +1,14 @@
+{
+  // scripts/는 dist 빌드 대상이 아니라 tsconfig.json(rootDir: src)에서 제외돼 있음.
+  // 이 파일은 그 대신 scripts/ 안의 스크립트가 타입체크/에디터 지원을 받을 수 있게 하는 별도 설정.
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "esnext",
+    "types": ["node"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["./**/*.ts", "../src/**/*.ts"]
+}
