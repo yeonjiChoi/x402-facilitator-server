@@ -129,3 +129,118 @@ x402 표준(coinbase/x402 spec) 코드 중 이 엔드포인트에서 실제로 �
 
 - 온체인에 아무것도 실행하지 않으므로 가스비가 들지 않는다.
 - 인증 없이 열려있는 엔드포인트 (프로토타입 단계, 추후 추가 예정 — `guide.md` 8번 섹션 참고).
+
+## POST /v1/settle
+
+검증된 결제를 **실제로 온체인에 실행**하는 엔드포인트. Facilitator 운영 지갑이 가스비를 내고 `transferWithAuthorization`을 브로드캐스트한다.
+
+요청 바디는 `/v1/verify`와 완전히 동일한 형식(`paymentPayload` + `paymentRequirements`). 내부적으로 `verifyPayment()`를 다시 한번 실행해서 재검증한 뒤(중간에 다른 요청이 먼저 정산했을 수 있으므로), 통과하면 온체인 트랜잭션을 보낸다.
+
+### 요청
+
+```
+POST /v1/settle
+Content-Type: application/json
+```
+
+`/v1/verify`의 요청 바디와 동일 — 위 섹션 참고.
+
+### 응답
+
+#### 200 — 정산 성공
+
+```json
+{
+  "success": true,
+  "transaction": "0x1234...abcd",
+  "network": "base-sepolia",
+  "payer": "0x..."
+}
+```
+
+#### 400 — 정산 실패
+
+```json
+{
+  "success": false,
+  "errorReason": "duplicate_settlement",
+  "transaction": "",
+  "network": "base-sepolia",
+  "payer": "0x..."
+}
+```
+
+x402 v2 스펙(Section 5.3.2)상 `transaction`/`network`는 실패 시에도 필수 필드라, 트랜잭션을 아예 보내지 못한 경우 `transaction`은 빈 문자열로 채워서 응답한다.
+
+### 처리 순서
+
+`src/services/settlement.service.ts`의 `settlePayment()` 기준.
+
+1. **재검증** — `verifyPayment()`를 그대로 재실행 (서명·유효시간·nonce·잔액 8단계 전부). 실패하면 그 `invalidReason`을 `errorReason`으로 그대로 반환하고 종료
+2. **서명 분해** — `signature`를 `transferWithAuthorization`이 요구하는 `v`/`r`/`s`로 분해 (`viem`의 `parseSignature`)
+3. **온체인 실행** — Facilitator 지갑(`walletClient`)으로 `transferWithAuthorization`을 호출해 브로드캐스트. 컨펌은 기다리지 않고 브로드캐스트 성공 시점(`txHash` 수신)에 바로 응답
+
+### errorReason 코드
+
+`/v1/verify`의 `invalidReason` 코드에 더해, 온체인 실행 단계에서만 발생하는 것들.
+
+| 코드 | 의미 |
+|---|---|
+| `duplicate_settlement` | 재검증 이후 트랜잭션을 보냈는데, 그 사이 다른 요청이 먼저 같은 nonce로 정산해서 컨트랙트가 revert됨 |
+| `invalid_exact_evm_payload_authorization_valid_after`/`_valid_before` | 컨트랙트 revert 사유가 유효시간 관련으로 확인된 경우 |
+| `invalid_exact_evm_payload_signature` | 컨트랙트 revert 사유가 서명 관련으로 확인된 경우 |
+| `invalid_transaction_state` | 컨트랙트가 revert했지만 구체적 사유를 알려진 패턴으로 못 찾은 경우 |
+| `unexpected_settle_error` | 컨트랙트 revert가 아닌 문제 (RPC 타임아웃, 네트워크 오류, 가스비 부족 등) |
+
+### 참고
+
+- 가스비는 항상 네이티브 토큰(Base는 ETH)으로 나가므로, Facilitator 운영 지갑에 ETH 잔액이 있어야 한다.
+- `/verify`와 `/settle` 사이에 시간차가 있을 수 있어서, 재검증에서 통과했더라도 온체인 실행 시점에 다시 실패할 수 있다 (TOCTOU) — 그래서 온체인 revert에 대한 별도 처리가 있다.
+
+## GET /supported
+
+이 Facilitator가 어떤 결제(scheme/network/asset)를 지원하는지 알려주는 x402 표준 discovery 엔드포인트. 리소스 서버가 402 응답에 넣을 `PaymentRequirements`를 만들 때 참고하는 용도.
+
+### 요청
+
+```
+GET /supported
+```
+
+파라미터 없음.
+
+### 응답
+
+```json
+{
+  "kinds": [
+    {
+      "x402Version": 1,
+      "scheme": "exact",
+      "network": "base-sepolia",
+      "extra": {
+        "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        "decimals": 6,
+        "eip712Name": "USDC",
+        "eip712Version": "2"
+      }
+    }
+  ],
+  "extensions": [],
+  "signers": {
+    "base-sepolia": ["0x..."]
+  }
+}
+```
+
+| 필드 | 설명 |
+|---|---|
+| `kinds` | 지원하는 결제 조합 목록. `config/assets.ts`의 `SUPPORTED_ASSETS` 하나당 항목 하나 |
+| `kinds[].extra` | 해당 자산의 EIP-712 도메인 정보. 리소스 서버가 별도 조회 없이 이 응답만으로 `PaymentRequirements`를 구성할 수 있게 함 |
+| `extensions` | 이 Facilitator가 구현한 선택적 확장 기능 목록. 아직 없어서 빈 배열 |
+| `signers` | `/v1/settle`을 실제로 실행하는 Facilitator 지갑 주소 (network별) |
+
+### 참고
+
+- 실제 CDP x402 facilitator API(`docs.cdp.coinbase.com`)를 보면 `network`는 `"base-sepolia"`처럼 평범한 문자열과 `"eip155:84532"`(CAIP-2) 둘 다 공식 허용 값이다 — 여기선 프로젝트 다른 곳(`PaymentRequirementsSchema` 등)과의 일관성을 위해 전자를 쓴다. 스펙 이탈이 아님.
+- CDP의 `kinds` 예시는 보통 network당 항목 하나(그 네트워크의 기본 자산 하나만 가정)인데, 이 프로젝트는 같은 network(base-sepolia)에서 USDC/KRWH 두 자산을 지원해야 해서 **자산 하나당 kind 하나**로 나눴다 — `network`는 같아도 `extra.asset`/`eip712Name`/`eip712Version`이 자산마다 달라서, 이렇게 안 나누면 리소스 서버가 어느 자산의 도메인 정보인지 구분할 수 없다.
