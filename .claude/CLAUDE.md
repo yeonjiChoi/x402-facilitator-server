@@ -77,7 +77,7 @@ src/
 | `GET /health` | 서버 생존 확인. DB 없으므로 별도 헬스체크 로직 없이 단순 응답 |
 | `POST /v1/verify` | 결제 서명 검증만 수행 (온체인 실행 없음). `paymentPayload` + `paymentRequirements`를 받아 서로 대조하고, EIP-712 서명·유효시간·nonce·잔액을 확인. `docs/api.md` 참고 |
 | `POST /v1/settle` | 검증된 결제를 실제로 온체인에 제출. `verifyPayment()` 재실행 후 `walletClient.writeContract()`로 `transferWithAuthorization` 브로드캐스트, 컨펌 대기 없이 `txHash` 바로 응답. `src/services/settlement.service.ts`. `docs/api.md` 참고 |
-| `GET /supported` | 지원 scheme/network/asset 목록 + EIP-712 도메인 정보(`extra`) + Facilitator 서명 지갑 주소(`signers`). 자산 하나당 `kind` 하나로 분리 (CDP 공식 예시와 달리 한 network에 자산이 여럿이라). `docs/api.md` 참고 |
+| `GET /v1/supported` | 지원 scheme/network/asset 목록 + EIP-712 도메인 정보(`extra`) + Facilitator 서명 지갑 주소(`signers`). 자산 하나당 `kind` 하나로 분리 (CDP 공식 예시와 달리 한 network에 자산이 여럿이라). `docs/api.md` 참고. (예전엔 `/supported`로 버전 prefix 없이 노출됐으나, `/v1/verify`·`/v1/settle`과 통일하기 위해 `/v1/supported`로 변경함 — `/health`만 인프라성 엔드포인트라 버전 prefix 없이 유지) |
 
 ### 🟡 나중에 필요
 

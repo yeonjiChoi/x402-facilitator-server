@@ -14,7 +14,7 @@ router.get("/health", (_req, res) => {
 
 // 이 Facilitator가 어떤 결제(scheme/network/asset)를 지원하는지 알려주는 x402 표준 discovery 엔드포인트.
 // 리소스 서버가 402 응답에 넣을 PaymentRequirements를 만들 때 참고하는 용도.
-router.get("/supported", (_req, res) => {
+router.get("/v1/supported", (_req, res) => {
   // 지원 자산(SUPPORTED_ASSETS) 하나당 kind 하나. asset별 EIP-712 도메인 정보를 extra에 실어서
   // 리소스 서버가 별도 조회 없이 이 응답만으로 PaymentRequirements를 구성할 수 있게 함.
   // 참고: x402 v2 스펙(Section 7.3)의 network 필드는 CAIP-2 형식(예: "eip155:84532")을 쓰지만,
