@@ -45,7 +45,7 @@ export async function settlePayment(
 
   try {
     // 온체인에 실제로 이체를 실행. Facilitator 지갑(walletClient)이 가스비를 내고 브로드캐스트함.
-    // 컨펌까지 기다리지 않고 브로드캐스트가 성공한 시점(txHash를 받은 시점)에 바로 반환 - guide.md 설계대로.
+    // 컨펌까지 기다리지 않고 브로드캐스트가 성공한 시점(txHash를 받은 시점)에 바로 반환
     const txHash = await walletClient.writeContract({
       address: asset.address,
       abi: eip3009Abi,

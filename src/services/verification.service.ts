@@ -13,8 +13,8 @@ import type {
   VerifyResult,
 } from "../types/payment.js";
 
-// 클라이언트가 서명한 조건(payload.accepted)과 서버가 실제로 요구한 조건(paymentRequirements)이
-// 같은지 대조. 클라이언트가 조건을 몰래 바꿔서 보낼 수 있으므로 반드시 필요한 체크.
+// 클라이언트가 서명한 조건(payload.accepted)과 서버가 실제로 요구한 조건(paymentRequirements)이 같은지 대조.
+// 클라이언트가 조건을 몰래 바꿔서 보낼 수 있으므로 반드시 필요한 체크.
 function requirementsMatch(
   a: PaymentRequirements,
   b: PaymentRequirements,

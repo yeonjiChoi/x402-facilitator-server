@@ -1,3 +1,4 @@
-// x402 결제 프로토콜 타입/스키마는 이제 x402-facilitator-sdk가 유일한 진실 공급원이다.
-// 이 스키마를 쓰는 리소스 서버 프로젝트와 필드가 어긋날 걱정 없이, 여기서는 그대로 재노출만 한다.
+// zod 스키마/타입은 여기서 더 이상 직접 정의하지 않고 x402-facilitator-sdk 패키지 걸 그대로 가져다 쓴다.
+// resource-server도 같은 패키지를 쓰기 때문에, 스키마를 고칠 땐 이 파일이 아니라
+// x402-facilitator-sdk/src/schemas.ts를 고치고 양쪽에서 다시 설치해야 반영된다.
 export * from "x402-facilitator-sdk";

@@ -17,8 +17,6 @@ router.get("/health", (_req, res) => {
 router.get("/v1/supported", (_req, res) => {
   // 지원 자산(SUPPORTED_ASSETS) 하나당 kind 하나. asset별 EIP-712 도메인 정보를 extra에 실어서
   // 리소스 서버가 별도 조회 없이 이 응답만으로 PaymentRequirements를 구성할 수 있게 함.
-  // 참고: x402 v2 스펙(Section 7.3)의 network 필드는 CAIP-2 형식(예: "eip155:84532")을 쓰지만,
-  // 이 프로젝트는 다른 곳(PaymentRequirementsSchema 등)과의 일관성을 위해 "base-sepolia" 문자열을 그대로 씀.
   const kinds = Object.values(SUPPORTED_ASSETS).map((asset) => ({
     x402Version: 1,
     scheme: "exact" as const,
@@ -70,6 +68,7 @@ router.post("/v1/settle", async (req, res) => {
     parsed.data.paymentPayload,
     parsed.data.paymentRequirements,
   );
+
   return res.status(result.success ? 200 : 400).json(result);
 });
 
