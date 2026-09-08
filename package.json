@@ -13,6 +13,7 @@
   "dependencies": {
     "express": "^5.2.1",
     "viem": "^2.56.3",
+    "x402-facilitator-sdk": "file:../x402-facilitator-sdk",
     "zod": "^4.5.4"
   },
   "devDependencies": {

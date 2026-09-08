@@ -36,7 +36,7 @@ const positionalArgs = process.argv
   .slice(2)
   .filter((arg) => !arg.startsWith("--"));
 // CLI 인자로 금액 오버라이드 가능. 기본값 30000 = USDC 6 decimals 기준 0.03 USDC.
-const amount = positionalArgs[0] ?? "30000000000000";
+const amount = positionalArgs[0] ?? "30000";
 const shouldSettle = process.argv.includes("--settle");
 
 const payerAccount = privateKeyToAccount(PAYER_PRIVATE_KEY as `0x${string}`);
@@ -96,6 +96,11 @@ console.log("--- 서명 완료 ---");
 console.log("payer:", payerAccount.address);
 console.log("payTo:", PAY_TO);
 console.log("amount:", amount);
+console.log();
+
+// 포스트맨 등에서 수동 테스트할 때 그대로 복사해서 쓸 수 있도록 요청 바디를 출력.
+console.log("--- 포스트맨용 body ---");
+console.log(body);
 console.log();
 
 console.log(`POST ${baseUrl}/v1/verify`);
